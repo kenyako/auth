@@ -3,6 +3,7 @@ module github.com/kenyako/auth
 go 1.21.6
 
 require (
+	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/golang/protobuf v1.5.3 // indirect
 	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
