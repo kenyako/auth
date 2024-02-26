@@ -12,18 +12,53 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	sq "github.com/Masterminds/squirrel"
+	"github.com/jackc/pgx/v4/pgxpool"
 	desc "github.com/kenyako/auth/pkg/auth_v1"
 )
 
-const grpcPort = 50051
+const (
+	grpcPort = 50051
+	dbDSN    = "host=localhost port=54321 dbname=auth user=auth-user password=auth-password sslmode=disable"
+)
 
 type server struct {
 	desc.UnimplementedUserAPIServer
+
+	db *pgxpool.Pool
+	qb sq.StatementBuilderType
 }
 
 func (s *server) Create(ctx context.Context, req *desc.CreateRequest) (*desc.CreateResponse, error) {
+
+	userName := req.GetName()
+	userEmail := req.GetEmail()
+	userPassword := req.GetPassword()
+	userPasConfirm := req.GetPasswordConfirm()
+	userRole := req.GetRole().String()
+
+	builderInsert := s.qb.Insert("users").
+		PlaceholderFormat(sq.Dollar).
+		Columns("name", "email", "password", "password_confirm", "role").
+		Values(userName, userEmail, userPassword, userPasConfirm, userRole).
+		Suffix("RETURNING id")
+
+	query, args, err := builderInsert.ToSql()
+	if err != nil {
+		log.Fatalf("failed to build query: %v", err)
+	}
+
+	var userID int64
+
+	err = s.db.QueryRow(ctx, query, args...).Scan(&userID)
+	if err != nil {
+		log.Fatalf("failed to insert user: %v", err)
+	}
+
+	log.Printf("inserted user with ID: %d", userID)
+
 	return &desc.CreateResponse{
-		Id: gofakeit.Int64(),
+		Id: userID,
 	}, nil
 }
 
@@ -67,6 +102,14 @@ func deleteUser(userID int64) error {
 }
 
 func main() {
+	ctx := context.Background()
+
+	pool, err := pgxpool.Connect(ctx, dbDSN)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+	defer pool.Close()
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -74,7 +117,11 @@ func main() {
 
 	s := grpc.NewServer()
 	reflection.Register(s)
-	desc.RegisterUserAPIServer(s, &server{})
+
+	desc.RegisterUserAPIServer(s, &server{
+		db: pool,
+		qb: sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+	})
 
 	log.Printf("server listening at %v", lis.Addr())
 
