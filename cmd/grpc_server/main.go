@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/brianvoe/gofakeit"
 	"google.golang.org/grpc"
@@ -13,7 +14,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	desc "github.com/kenyako/auth/pkg/auth_v1"
 )
 
@@ -21,6 +23,17 @@ const (
 	grpcPort = 50051
 	dbDSN    = "host=localhost port=54321 dbname=auth user=auth-user password=auth-password sslmode=disable"
 )
+
+type User struct {
+	ID        int64     `db:"id"`
+	Name      string    `db:"name"`
+	Email     string    `db:"email"`
+	Password  string    `db:"password"`
+	PassConf  string    `db:"password_confirm"`
+	Role      string    `db:"role"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+}
 
 type server struct {
 	desc.UnimplementedUserAPIServer
@@ -63,16 +76,41 @@ func (s *server) Create(ctx context.Context, req *desc.CreateRequest) (*desc.Cre
 }
 
 func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetResponse, error) {
-	log.Printf("Note id: %d", req.GetId())
+	userID := req.GetId()
 
-	return &desc.GetResponse{
-		Id:        req.GetId(),
-		Name:      gofakeit.Name(),
-		Email:     gofakeit.Email(),
-		Role:      desc.UserRole_USER,
-		CreatedAt: timestamppb.New(gofakeit.Date()),
-		UpdatedAt: timestamppb.New(gofakeit.Date()),
-	}, nil
+	builderSelect := s.qb.Select("id", "name", "email", "role", "created_at", "updated_at").
+		From("users").
+		Where(sq.Eq{
+			"id": userID,
+		})
+
+	query, args, err := builderSelect.ToSql()
+	if err != nil {
+		log.Fatalf("failed to build query: %v", err)
+	}
+
+	row, err := s.db.Query(ctx, query, args...)
+	if err != nil {
+		log.Fatalf("failed to get user from query: %v", err)
+	}
+
+	user, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByNameLax[User])
+	if err != nil {
+		log.Fatalf("failed to collect user from db: %v", err)
+	}
+
+	roleNum := desc.UserRole_value[user.Role]
+
+	userData := desc.GetResponse{
+		Id:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		Role:      desc.UserRole(roleNum),
+		CreatedAt: timestamppb.New(user.CreatedAt),
+		UpdatedAt: timestamppb.New(user.UpdatedAt),
+	}
+
+	return &userData, nil
 }
 
 func (s *server) Update(ctx context.Context, req *desc.UpdateRequest) (*emptypb.Empty, error) {
@@ -89,26 +127,30 @@ func (s *server) Update(ctx context.Context, req *desc.UpdateRequest) (*emptypb.
 
 func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*emptypb.Empty, error) {
 
-	err := deleteUser(req.GetId())
-	if err != nil {
-		return nil, err
-	}
-
 	return &emptypb.Empty{}, nil
 }
 
-func deleteUser(userID int64) error {
-	return nil
-}
-
 func main() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	pool, err := pgxpool.Connect(ctx, dbDSN)
+	// конфиг с ДСН
+	pgxCfg, err := pgxpool.ParseConfig(dbDSN)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Fatalf("failed to patde config: %v", err)
 	}
-	defer pool.Close()
+
+	// создание нового соединения с бд через конфиг
+	pool, err := pgxpool.NewWithConfig(ctx, pgxCfg)
+	if err != nil {
+		log.Fatalf("failed to connect to postgres: %v", err)
+	}
+
+	// проверка на то, что база откликается и работает
+	err = pool.Ping(ctx)
+	if err != nil {
+		log.Fatalf("ping to postgres failed: %v", err)
+	}
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
