@@ -7,7 +7,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/brianvoe/gofakeit"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -115,17 +114,53 @@ func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetRespon
 
 func (s *server) Update(ctx context.Context, req *desc.UpdateRequest) (*emptypb.Empty, error) {
 
-	newName := gofakeit.Name()
-	newEmail := gofakeit.Email()
-	newRole := desc.UserRole(gofakeit.Number(1, 0))
+	userID := req.GetId()
 
-	log.Printf("Updating user with ID: %d", req.GetId())
-	log.Printf("New name: %s\nNew Email: %s\nNew role: %v", newName, newEmail, newRole)
+	newName := req.GetName().Value
+	newEmail := req.GetEmail().Value
+	newRole := req.GetRole()
+
+	builderUpdate := s.qb.Update("users").
+		PlaceholderFormat(sq.Dollar).
+		Set("name", newName).
+		Set("email", newEmail).
+		Set("role", newRole).
+		Set("updated_at", time.Now()).
+		Where(sq.Eq{"id": userID})
+
+	query, args, err := builderUpdate.ToSql()
+	if err != nil {
+		log.Fatalf("failed to builder update: %v", err)
+	}
+
+	res, err := s.db.Exec(ctx, query, args...)
+	if err != nil {
+		log.Fatalf("failed to update db row: %v", err)
+	}
+
+	log.Printf("updated %d rows", res.RowsAffected())
 
 	return &emptypb.Empty{}, nil
 }
 
 func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*emptypb.Empty, error) {
+
+	userID := req.GetId()
+
+	builderDelete := s.qb.Delete("users").
+		Where(sq.Eq{"id": userID})
+
+	query, args, err := builderDelete.ToSql()
+	if err != nil {
+		log.Fatalf("failed to build delete: %v", err)
+	}
+
+	row, err := s.db.Exec(ctx, query, args...)
+	if err != nil {
+		log.Fatalf("failed to delete user: %v", err)
+	}
+
+	log.Printf("delete %d rows", row.RowsAffected())
 
 	return &emptypb.Empty{}, nil
 }

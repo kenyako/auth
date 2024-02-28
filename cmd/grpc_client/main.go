@@ -13,7 +13,7 @@ import (
 
 const (
 	address = "localhost:50051"
-	userID  = 4
+	userID  = 2
 )
 
 func main() {
@@ -37,7 +37,6 @@ func main() {
 	// 	PasswordConfirm: testPassword,
 	// 	Role:            desc.UserRole(gofakeit.Number(0, 1)),
 	// })
-
 	// if err != nil {
 	// 	log.Fatalf("failed to create user: %v", err)
 	// }
@@ -52,4 +51,19 @@ func main() {
 	log.Printf("User info:\nID: %d\nName: %s\nEmail: %s\nRole: %s\nCreated at: %v\nUpdated at: %v",
 		r.GetId(), r.GetName(), r.GetEmail(), r.GetRole(),
 		r.GetCreatedAt(), r.GetUpdatedAt())
+
+	// _, err = c.Delete(ctx, &desc.DeleteRequest{Id: userID})
+	// if err != nil {
+	// 	log.Fatalf("failed to delete user: %v", err)
+	// }
+
+	// _, err = c.Update(ctx, &desc.UpdateRequest{
+	// 	Id:    userID,
+	// 	Name:  wrapperspb.String(gofakeit.Name()),
+	// 	Email: wrapperspb.String(gofakeit.Email()),
+	// 	Role:  desc.UserRole(1),
+	// })
+	// if err != nil {
+	// 	log.Fatalf("failed to update user info: %v", err)
+	// }
 }
