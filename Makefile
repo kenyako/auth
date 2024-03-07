@@ -26,7 +26,7 @@ generate-user-api:
 	api/auth_v1/auth.proto
 
 
-install-deps-bd:
+install-deps-db:
 	GOBIN="$(LOCAL_BIN)" go install github.com/pressly/goose/v3/cmd/goose@v3.14.0
 
 local-migration-status:
