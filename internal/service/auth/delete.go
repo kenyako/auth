@@ -4,7 +4,15 @@ import "context"
 
 func (s *serv) Delete(ctx context.Context, id int64) error {
 
-	err := s.authRepository.Delete(ctx, id)
+	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		errTx := s.authRepository.Delete(ctx, id)
+		if errTx != nil {
+			return errTx
+		}
+
+		return nil
+	})
+
 	if err != nil {
 		return err
 	}

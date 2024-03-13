@@ -4,15 +4,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/Masterminds/squirrel"
+	sq "github.com/Masterminds/squirrel"
+	"github.com/kenyako/auth/internal/client/db"
 	"github.com/kenyako/auth/internal/model"
 )
 
 func (r *repo) Update(ctx context.Context, data *model.UserUpdate) error {
 
-	builderUpdate := r.qb.Update(table).
+	builderUpdate := sq.Update(table).
 		Set(updatedAtColumn, time.Now()).
-		Where(squirrel.Eq{idColumn: data.ID})
+		Where(sq.Eq{idColumn: data.ID})
 
 	if data.Name != nil {
 		builderUpdate = builderUpdate.Set(nameColumn, data.Name)
@@ -31,7 +32,12 @@ func (r *repo) Update(ctx context.Context, data *model.UserUpdate) error {
 		return err
 	}
 
-	_, err = r.db.Exec(ctx, query, args...)
+	q := db.Query{
+		Name:     "auth_repository.Update",
+		QueryRaw: query,
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
 		return err
 	}

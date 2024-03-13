@@ -8,7 +8,19 @@ import (
 
 func (s *serv) Get(ctx context.Context, id int64) (*model.User, error) {
 
-	user, err := s.authRepository.Get(ctx, id)
+	var user *model.User
+
+	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		u, errTx := s.authRepository.Get(ctx, id)
+		if errTx != nil {
+			return errTx
+		}
+
+		user = u
+
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}

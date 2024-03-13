@@ -3,8 +3,8 @@ package userrepo
 import (
 	"context"
 
-	"github.com/Masterminds/squirrel"
-	"github.com/jackc/pgx/v5"
+	sq "github.com/Masterminds/squirrel"
+	"github.com/kenyako/auth/internal/client/db"
 	"github.com/kenyako/auth/internal/model"
 	"github.com/kenyako/auth/internal/repository/auth/converter"
 	coremodel "github.com/kenyako/auth/internal/repository/auth/model"
@@ -12,26 +12,28 @@ import (
 
 func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
 
-	builderSelect := r.qb.Select(idColumn, nameColumn, emailColumn, roleColumn, createdAtColumn, updatedAtColumn).
+	builderSelect := sq.Select(idColumn, nameColumn, emailColumn, roleColumn, createdAtColumn, updatedAtColumn).
 		From(table).
-		Where(squirrel.Eq{
+		Where(sq.Eq{
 			idColumn: id,
-		})
+		}).
+		Limit(1)
 
 	query, args, err := builderSelect.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	row, err := r.db.Query(ctx, query, args...)
+	q := db.Query{
+		Name:     "auth_repository.Get",
+		QueryRaw: query,
+	}
+
+	var user coremodel.User
+	err = r.db.DB().ScanOneContext(ctx, &user, q, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByNameLax[coremodel.User])
-	if err != nil {
-		return nil, err
-	}
-
-	return converter.ToUserFromRepo(user), nil
+	return converter.ToUserFromRepo(&user), nil
 }
