@@ -3,20 +3,26 @@ package userrepo
 import (
 	"context"
 
-	"github.com/Masterminds/squirrel"
+	sq "github.com/Masterminds/squirrel"
+	"github.com/kenyako/auth/internal/client/db"
 )
 
 func (r *repo) Delete(ctx context.Context, id int64) error {
 
-	builderDelete := r.qb.Delete(table).
-		Where(squirrel.Eq{idColumn: id})
+	builderDelete := sq.Delete(table).
+		Where(sq.Eq{idColumn: id})
 
 	query, args, err := builderDelete.ToSql()
 	if err != nil {
 		return err
 	}
 
-	_, err = r.db.Exec(ctx, query, args...)
+	q := db.Query{
+		Name:     "auth_repository.Delete",
+		QueryRaw: query,
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, q, args)
 	if err != nil {
 		return err
 	}

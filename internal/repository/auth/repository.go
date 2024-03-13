@@ -1,8 +1,7 @@
 package userrepo
 
 import (
-	"github.com/Masterminds/squirrel"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/kenyako/auth/internal/client/db"
 	"github.com/kenyako/auth/internal/repository"
 )
 
@@ -22,13 +21,11 @@ const (
 )
 
 type repo struct {
-	db *pgxpool.Pool
-	qb squirrel.StatementBuilderType
+	db db.Client
 }
 
-func NewRepository(db *pgxpool.Pool) repository.AuthRepository {
+func NewRepository(db db.Client) repository.AuthRepository {
 	return &repo{
 		db: db,
-		qb: squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar),
 	}
 }
