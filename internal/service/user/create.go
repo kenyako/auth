@@ -12,12 +12,7 @@ func (s *serv) Create(ctx context.Context, data *model.UserCreate) (int64, error
 
 	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
 		var errTx error
-		id, errTx = s.authRepository.Create(ctx, data)
-		if errTx != nil {
-			return errTx
-		}
-
-		_, errTx = s.authRepository.Get(ctx, id)
+		id, errTx = s.userRepository.Create(ctx, data)
 		if errTx != nil {
 			return errTx
 		}

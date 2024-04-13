@@ -2,7 +2,7 @@ package converter
 
 import (
 	"github.com/kenyako/auth/internal/model"
-	coremodel "github.com/kenyako/auth/internal/repository/auth/model"
+	coremodel "github.com/kenyako/auth/internal/repository/user/model"
 )
 
 func ToUserFromRepo(user *coremodel.User) *model.User {

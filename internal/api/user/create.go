@@ -8,7 +8,7 @@ import (
 )
 
 func (i *Implementation) Create(ctx context.Context, req *desc.CreateRequest) (*desc.CreateResponse, error) {
-	id, err := i.authService.Create(ctx, converter.ToUserCreateFromDesc(req))
+	id, err := i.userService.Create(ctx, converter.ToUserCreateFromDesc(req))
 	if err != nil {
 		return nil, err
 	}

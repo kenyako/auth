@@ -9,9 +9,9 @@ import (
 )
 
 func (i *Implementation) Update(ctx context.Context, req *desc.UpdateRequest) (*emptypb.Empty, error) {
-	err := i.authService.Update(ctx, converter.ToUserUpdateFromDesc(req))
+	err := i.userService.Update(ctx, converter.ToUserUpdateFromDesc(req))
 	if err != nil {
-		return &emptypb.Empty{}, err
+		return nil, err
 	}
 
 	return &emptypb.Empty{}, nil

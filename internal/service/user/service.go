@@ -7,13 +7,13 @@ import (
 )
 
 type serv struct {
-	authRepository repository.AuthRepository
+	userRepository repository.UserRepository
 	txManager      db.TxManager
 }
 
-func NewService(authRepository repository.AuthRepository, txManager db.TxManager) service.AuthService {
+func NewService(userRepository repository.UserRepository, txManager db.TxManager) service.UserService {
 	return &serv{
-		authRepository: authRepository,
+		userRepository: userRepository,
 		txManager:      txManager,
 	}
 }

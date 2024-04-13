@@ -13,9 +13,9 @@ import (
 	"github.com/kenyako/auth/internal/repository"
 	"github.com/kenyako/auth/internal/service"
 
-	authAPI "github.com/kenyako/auth/internal/api/auth"
-	authRepo "github.com/kenyako/auth/internal/repository/auth"
-	authService "github.com/kenyako/auth/internal/service/auth"
+	userAPI "github.com/kenyako/auth/internal/api/user"
+	userRepo "github.com/kenyako/auth/internal/repository/user"
+	userService "github.com/kenyako/auth/internal/service/user"
 )
 
 type serviceProvider struct {
@@ -24,11 +24,11 @@ type serviceProvider struct {
 
 	dbClient       db.Client
 	txManager      db.TxManager
-	authRepository repository.AuthRepository
+	authRepository repository.UserRepository
 
-	authService service.AuthService
+	userService service.UserService
 
-	authImpl *authAPI.Implementation
+	authImpl *userAPI.Implementation
 }
 
 func newServiceProvider() *serviceProvider {
@@ -90,28 +90,28 @@ func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
 	return s.txManager
 }
 
-func (s *serviceProvider) AuthRepository(ctx context.Context) repository.AuthRepository {
+func (s *serviceProvider) AuthRepository(ctx context.Context) repository.UserRepository {
 	if s.authRepository != nil {
-		s.authRepository = authRepo.NewRepository(s.DBCClient(ctx))
+		s.authRepository = userRepo.NewRepository(s.DBCClient(ctx))
 	}
 
 	return s.authRepository
 }
 
-func (s *serviceProvider) AuthService(ctx context.Context) service.AuthService {
-	if s.authService == nil {
-		s.authService = authService.NewService(
+func (s *serviceProvider) AuthService(ctx context.Context) service.UserService {
+	if s.userService == nil {
+		s.userService = userService.NewService(
 			s.AuthRepository(ctx),
 			s.TxManager(ctx),
 		)
 	}
 
-	return s.authService
+	return s.userService
 }
 
-func (s *serviceProvider) AuthImpl(ctx context.Context) *authAPI.Implementation {
+func (s *serviceProvider) AuthImpl(ctx context.Context) *userAPI.Implementation {
 	if s.authImpl == nil {
-		s.authImpl = authAPI.NewImplementation(s.AuthService(ctx))
+		s.authImpl = userAPI.NewImplementation(s.AuthService(ctx))
 	}
 
 	return s.authImpl
