@@ -4,31 +4,29 @@ import (
 	"context"
 	"log"
 
-	"github.com/kenyako/auth/internal/client/db"
-	"github.com/kenyako/auth/internal/client/db/pg"
-	"github.com/kenyako/auth/internal/client/db/transaction"
-	"github.com/kenyako/auth/internal/closer"
 	"github.com/kenyako/auth/internal/config"
 	"github.com/kenyako/auth/internal/config/env"
 	"github.com/kenyako/auth/internal/repository"
 	"github.com/kenyako/auth/internal/service"
+	"github.com/kenyako/platform_common/pkg/closer"
+	"github.com/kenyako/platform_common/pkg/postgres"
 
-	authAPI "github.com/kenyako/auth/internal/api/auth"
-	authRepo "github.com/kenyako/auth/internal/repository/auth"
-	authService "github.com/kenyako/auth/internal/service/auth"
+	userAPI "github.com/kenyako/auth/internal/api/user"
+	userRepo "github.com/kenyako/auth/internal/repository/user"
+	userService "github.com/kenyako/auth/internal/service/user"
 )
 
 type serviceProvider struct {
 	pgConfig   config.PGConfig
 	grpcConfig config.GRPCConfig
 
-	dbClient       db.Client
-	txManager      db.TxManager
-	authRepository repository.AuthRepository
+	dbClient       postgres.Client
+	txManager      postgres.TxManager
+	authRepository repository.UserRepository
 
-	authService service.AuthService
+	userService service.UserService
 
-	authImpl *authAPI.Implementation
+	authImpl *userAPI.Implementation
 }
 
 func newServiceProvider() *serviceProvider {
@@ -63,9 +61,9 @@ func (s *serviceProvider) GRPCConfig() config.GRPCConfig {
 	return s.grpcConfig
 }
 
-func (s *serviceProvider) DBCClient(ctx context.Context) db.Client {
+func (s *serviceProvider) DBCClient(ctx context.Context) postgres.Client {
 	if s.dbClient == nil {
-		cl, err := pg.New(ctx, s.PGConfig().DSN())
+		cl, err := postgres.NewClient(ctx, s.PGConfig().DSN())
 		if err != nil {
 			log.Fatalf("failed to create db client: %v", err)
 		}
@@ -82,36 +80,36 @@ func (s *serviceProvider) DBCClient(ctx context.Context) db.Client {
 	return s.dbClient
 }
 
-func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
+func (s *serviceProvider) TxManager(ctx context.Context) postgres.TxManager {
 	if s.txManager == nil {
-		s.txManager = transaction.NewTransactionManager(s.DBCClient(ctx).DB())
+		s.txManager = postgres.NewTransactionManager(s.DBCClient(ctx).DB())
 	}
 
 	return s.txManager
 }
 
-func (s *serviceProvider) AuthRepository(ctx context.Context) repository.AuthRepository {
+func (s *serviceProvider) AuthRepository(ctx context.Context) repository.UserRepository {
 	if s.authRepository != nil {
-		s.authRepository = authRepo.NewRepository(s.DBCClient(ctx))
+		s.authRepository = userRepo.NewRepository(s.DBCClient(ctx))
 	}
 
 	return s.authRepository
 }
 
-func (s *serviceProvider) AuthService(ctx context.Context) service.AuthService {
-	if s.authService == nil {
-		s.authService = authService.NewService(
+func (s *serviceProvider) AuthService(ctx context.Context) service.UserService {
+	if s.userService == nil {
+		s.userService = userService.NewService(
 			s.AuthRepository(ctx),
 			s.TxManager(ctx),
 		)
 	}
 
-	return s.authService
+	return s.userService
 }
 
-func (s *serviceProvider) AuthImpl(ctx context.Context) *authAPI.Implementation {
+func (s *serviceProvider) AuthImpl(ctx context.Context) *userAPI.Implementation {
 	if s.authImpl == nil {
-		s.authImpl = authAPI.NewImplementation(s.AuthService(ctx))
+		s.authImpl = userAPI.NewImplementation(s.AuthService(ctx))
 	}
 
 	return s.authImpl
