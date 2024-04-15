@@ -4,12 +4,12 @@ import (
 	"context"
 	"log"
 
-	"github.com/kenyako/auth/internal/client/postgres"
-	"github.com/kenyako/auth/internal/closer"
 	"github.com/kenyako/auth/internal/config"
 	"github.com/kenyako/auth/internal/config/env"
 	"github.com/kenyako/auth/internal/repository"
 	"github.com/kenyako/auth/internal/service"
+	"github.com/kenyako/platform_common/pkg/closer"
+	"github.com/kenyako/platform_common/pkg/postgres"
 
 	userAPI "github.com/kenyako/auth/internal/api/user"
 	userRepo "github.com/kenyako/auth/internal/repository/user"

@@ -6,9 +6,9 @@ import (
 	"log"
 	"net"
 
-	"github.com/kenyako/auth/internal/closer"
 	"github.com/kenyako/auth/internal/config"
 	desc "github.com/kenyako/auth/pkg/auth_v1"
+	"github.com/kenyako/platform_common/pkg/closer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"

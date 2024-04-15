@@ -1,9 +1,9 @@
 package user
 
 import (
-	"github.com/kenyako/auth/internal/client/postgres"
 	"github.com/kenyako/auth/internal/repository"
 	"github.com/kenyako/auth/internal/service"
+	"github.com/kenyako/platform_common/pkg/postgres"
 )
 
 type serv struct {

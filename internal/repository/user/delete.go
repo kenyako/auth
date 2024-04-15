@@ -4,7 +4,7 @@ import (
 	"context"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/kenyako/auth/internal/client/postgres"
+	"github.com/kenyako/platform_common/pkg/postgres"
 )
 
 func (r *repo) Delete(ctx context.Context, id int64) error {

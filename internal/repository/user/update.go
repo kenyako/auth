@@ -5,8 +5,8 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/kenyako/auth/internal/client/postgres"
 	"github.com/kenyako/auth/internal/model"
+	"github.com/kenyako/platform_common/pkg/postgres"
 )
 
 func (r *repo) Update(ctx context.Context, data *model.UserUpdate) error {

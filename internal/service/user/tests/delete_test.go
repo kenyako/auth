@@ -7,14 +7,14 @@ import (
 
 	"github.com/brianvoe/gofakeit"
 	"github.com/jackc/pgx/v4"
-	"github.com/kenyako/auth/internal/client/postgres"
 	"github.com/kenyako/auth/internal/repository"
 	"github.com/kenyako/auth/internal/service/user"
+	"github.com/kenyako/platform_common/pkg/postgres"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	postgresmocks "github.com/kenyako/auth/internal/client/postgres/mocks"
 	usermocks "github.com/kenyako/auth/internal/repository/mocks"
+	postgresmocks "github.com/kenyako/platform_common/pkg/postgres/mocks"
 )
 
 func TestService_SuccessDelete(t *testing.T) {

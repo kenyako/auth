@@ -4,10 +4,10 @@ import (
 	"context"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/kenyako/auth/internal/client/postgres"
 	"github.com/kenyako/auth/internal/model"
 	"github.com/kenyako/auth/internal/repository/user/converter"
 	coremodel "github.com/kenyako/auth/internal/repository/user/model"
+	"github.com/kenyako/platform_common/pkg/postgres"
 )
 
 func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
