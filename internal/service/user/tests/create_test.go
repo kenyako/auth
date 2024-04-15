@@ -1,112 +1,283 @@
 package tests
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"testing"
+import (
+	"context"
+	"fmt"
+	"testing"
 
-// 	"github.com/brianvoe/gofakeit"
-// 	"github.com/gojuno/minimock/v3"
-// 	"github.com/jackc/pgx/v4"
-// 	"github.com/kenyako/auth/internal/client/db"
-// 	"github.com/kenyako/auth/internal/model"
-// 	"github.com/kenyako/auth/internal/repository"
-// 	"github.com/kenyako/auth/internal/service/auth"
-// 	"github.com/stretchr/testify/require"
+	"github.com/brianvoe/gofakeit"
+	"github.com/jackc/pgx/v4"
+	"github.com/kenyako/auth/internal/client/postgres"
+	"github.com/kenyako/auth/internal/model"
+	"github.com/kenyako/auth/internal/repository"
+	"github.com/kenyako/auth/internal/service/user"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
-// 	dbMocks "github.com/kenyako/auth/internal/client/db/mocks"
-// 	repoMocks "github.com/kenyako/auth/internal/repository/mocks"
-// )
+	postgresmocks "github.com/kenyako/auth/internal/client/postgres/mocks"
+	usermocks "github.com/kenyako/auth/internal/repository/mocks"
+)
 
-// func TestCreate(t *testing.T) {
+func TestService_SuccessCreate(t *testing.T) {
+	t.Parallel()
 
-// 	type authRepositoryMockFunc func(mc *minimock.Controller) repository.AuthRepository
-// 	type txManagerMockFunc func(mc *minimock.Controller) db.TxManager
+	type args struct {
+		ctx context.Context
+		req *model.UserCreate
+	}
 
-// 	type args struct {
-// 		ctx context.Context
-// 		req *model.UserCreate
-// 	}
+	type mocker struct {
+		userRepo  repository.UserRepository
+		txManager postgres.TxManager
+	}
 
-// 	var (
-// 		ctx    = context.Background()
-// 		mc     = minimock.NewController(t)
-// 		txOpts = pgx.TxOptions{
-// 			IsoLevel: pgx.ReadCommitted,
-// 		}
+	var (
+		ctx = context.Background()
 
-// 		id       = gofakeit.Int64()
-// 		name     = gofakeit.Name()
-// 		email    = gofakeit.Email()
-// 		password = gofakeit.Password(true, false, true, true, false, 9)
-// 		role     = gofakeit.RandString([]string{"USER", "ADMIN"})
+		txOpts = pgx.TxOptions{
+			IsoLevel: pgx.ReadCommitted,
+		}
 
-// 		repoErr = fmt.Errorf("repo error")
+		id       = gofakeit.Int64()
+		name     = gofakeit.Name()
+		email    = gofakeit.Email()
+		password = gofakeit.Password(true, false, true, true, false, 9)
+		role     = gofakeit.RandString([]string{"USER", "ADMIN"})
 
-// 		req = &model.UserCreate{
-// 			Name:            name,
-// 			Email:           email,
-// 			Password:        password,
-// 			PasswordConfirm: password,
-// 			Role:            role,
-// 		}
-// 	)
+		req = &model.UserCreate{
+			Name:            name,
+			Email:           email,
+			Password:        password,
+			PasswordConfirm: password,
+			Role:            role,
+		}
+	)
 
-// 	tests := []struct {
-// 		name               string
-// 		args               args
-// 		want               int64
-// 		err                error
-// 		authRepositoryMock authRepositoryMockFunc
-// 		txManagerMock      txManagerMockFunc
-// 	}{
-// 		{
-// 			name: "success case",
-// 			args: args{
-// 				ctx: ctx,
-// 				req: req,
-// 			},
-// 			want: id,
-// 			err:  nil,
-// 			authRepositoryMock: func(mc *minimock.Controller) repository.AuthRepository {
-// 				mock := repoMocks.NewAuthRepositoryMock(mc)
-// 				mock.CreateMock.Expect(ctx, req).Return(id, nil)
-// 				return mock
-// 			},
-// 			txManagerMock: func(mc *minimock.Controller) db.TxManager {
-// 				mockClient := dbMocks.NewClientMock(mc)
+	tests := []struct {
+		name string
+		args args
+		want int64
+		err  error
+		mock func(tt args) mocker
+	}{
+		{
+			name: "success repo user create",
+			args: args{
+				ctx: ctx,
+				req: req,
+			},
+			want: id,
+			err:  nil,
+			mock: func(tt args) mocker {
 
-// 			},
-// 		},
-// 		{
-// 			name: "repo error case",
-// 			args: args{
-// 				ctx: ctx,
-// 				req: req,
-// 			},
-// 			want: 0,
-// 			err:  repoErr,
-// 			authRepositoryMock: func(mc *minimock.Controller) repository.AuthRepository {
-// 				mock := repoMocks.NewAuthRepositoryMock(mc)
-// 				mock.CreateMock.Expect(ctx, req).Return(0, repoErr)
-// 				return mock
-// 			},
-// 		},
-// 	}
+				tx := postgresmocks.NewTx(t)
 
-// 	for _, tt := range tests {
-// 		tt := tt
+				txCtx := postgres.InjectTx(tt.ctx, tx)
 
-// 		t.Run(tt.name, func(t *testing.T) {
+				tx.On("Commit", txCtx).Return(nil)
 
-// 			authRepositoryMock := tt.authRepositoryMock(mc)
-// 			txManagerMock := tt.txManagerMock(mc)
-// 			service := auth.NewService(authRepositoryMock, txManagerMock)
+				db := postgresmocks.NewPostgres(t)
+				db.On("BeginTx", tt.ctx, txOpts).Return(tx, nil)
 
-// 			result, err := service.Create(tt.args.ctx, tt.args.req)
+				txManager := postgres.NewTransactionManager(db)
 
-// 			require.Equal(t, tt.err, err)
-// 			require.Equal(t, tt.want, result)
-// 		})
-// 	}
-// }
+				userRepo := usermocks.NewUserRepository(t)
+				userRepo.On("Create", txCtx, tt.req).Return(id, nil)
+
+				return mocker{
+					userRepo:  userRepo,
+					txManager: txManager,
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			mockerArgs := tt.mock(tt.args)
+
+			service := user.NewService(mockerArgs.userRepo, mockerArgs.txManager)
+
+			result, err := service.Create(tt.args.ctx, tt.args.req)
+
+			require.Equal(t, tt.err, err)
+			require.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestService_FailCreate(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		ctx context.Context
+		req *model.UserCreate
+	}
+
+	type mocker struct {
+		userRepo  repository.UserRepository
+		txManager postgres.TxManager
+	}
+
+	var (
+		ctx = context.Background()
+
+		txOpts = pgx.TxOptions{
+			IsoLevel: pgx.ReadCommitted,
+		}
+
+		repoErr = fmt.Errorf("repo failed to user create")
+
+		name     = gofakeit.Name()
+		email    = gofakeit.Email()
+		password = gofakeit.Password(true, false, true, true, false, 9)
+		role     = gofakeit.RandString([]string{"USER", "ADMIN"})
+
+		req = &model.UserCreate{
+			Name:            name,
+			Email:           email,
+			Password:        password,
+			PasswordConfirm: password,
+			Role:            role,
+		}
+	)
+
+	tests := []struct {
+		name string
+		args args
+		want int64
+		err  error
+		mock func(tt args) mocker
+	}{
+		{
+			name: "fail repo user create",
+			args: args{
+				ctx: ctx,
+				req: req,
+			},
+			want: int64(0),
+			err:  repoErr,
+			mock: func(tt args) mocker {
+
+				tx := postgresmocks.NewTx(t)
+
+				txCtx := postgres.InjectTx(tt.ctx, tx)
+
+				tx.On("Rollback", txCtx).Return(nil)
+
+				db := postgresmocks.NewPostgres(t)
+				db.On("BeginTx", tt.ctx, txOpts).Return(tx, nil)
+
+				txManager := postgres.NewTransactionManager(db)
+
+				userRepo := usermocks.NewUserRepository(t)
+				userRepo.On("Create", txCtx, tt.req).Return(int64(0), repoErr)
+
+				return mocker{
+					userRepo:  userRepo,
+					txManager: txManager,
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			mockerArgs := tt.mock(tt.args)
+
+			service := user.NewService(mockerArgs.userRepo, mockerArgs.txManager)
+
+			result, err := service.Create(tt.args.ctx, tt.args.req)
+
+			require.Error(t, tt.err, err)
+			require.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestService_FailProcessTxUserCreate(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		ctx context.Context
+		req *model.UserCreate
+	}
+
+	type mocker struct {
+		userRepo  repository.UserRepository
+		txManager postgres.TxManager
+	}
+
+	var (
+		ctx = context.Background()
+
+		repoErr = fmt.Errorf("failed to transaction start")
+
+		name     = gofakeit.Name()
+		email    = gofakeit.Email()
+		password = gofakeit.Password(true, false, true, true, false, 9)
+		role     = gofakeit.RandString([]string{"USER", "ADMIN"})
+
+		req = &model.UserCreate{
+			Name:            name,
+			Email:           email,
+			Password:        password,
+			PasswordConfirm: password,
+			Role:            role,
+		}
+	)
+
+	tests := []struct {
+		name string
+		args args
+		want int64
+		err  error
+		mock func(tt args) mocker
+	}{
+		{
+			name: "fail to start tx (Read Committed returned error)",
+			args: args{
+				ctx: ctx,
+				req: req,
+			},
+			want: int64(0),
+			err:  repoErr,
+			mock: func(tt args) mocker {
+
+				txManager := postgresmocks.NewTxManager(t)
+
+				txManager.On("ReadCommitted", tt.ctx, mock.AnythingOfType("postgres.Handler")).Return(repoErr)
+
+				return mocker{
+					userRepo:  nil,
+					txManager: txManager,
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			mockerArgs := tt.mock(tt.args)
+
+			service := user.NewService(mockerArgs.userRepo, mockerArgs.txManager)
+
+			result, err := service.Create(tt.args.ctx, tt.args.req)
+
+			require.Error(t, tt.err, err)
+			require.Equal(t, tt.want, result)
+		})
+	}
+}

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/kenyako/auth/internal/client/db"
+	"github.com/kenyako/auth/internal/client/postgres"
 )
 
 func (r *repo) Delete(ctx context.Context, id int64) error {
@@ -17,7 +17,7 @@ func (r *repo) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	q := db.Query{
+	q := postgres.Query{
 		Name:     "auth_repository.Delete",
 		QueryRaw: query,
 	}

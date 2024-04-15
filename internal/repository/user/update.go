@@ -5,7 +5,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/kenyako/auth/internal/client/db"
+	"github.com/kenyako/auth/internal/client/postgres"
 	"github.com/kenyako/auth/internal/model"
 )
 
@@ -32,7 +32,7 @@ func (r *repo) Update(ctx context.Context, data *model.UserUpdate) error {
 		return err
 	}
 
-	q := db.Query{
+	q := postgres.Query{
 		Name:     "auth_repository.Update",
 		QueryRaw: query,
 	}

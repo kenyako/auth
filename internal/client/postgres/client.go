@@ -1,17 +1,21 @@
-package pg
+package postgres
 
 import (
 	"context"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/kenyako/auth/internal/client/db"
 )
 
-type pgClient struct {
-	masterDBC db.DB
+type Client interface {
+	DB() Postgres
+	Close() error
 }
 
-func New(ctx context.Context, dsn string) (db.Client, error) {
+type pgClient struct {
+	masterDBC Postgres
+}
+
+func NewClient(ctx context.Context, dsn string) (Client, error) {
 	dbc, err := pgxpool.Connect(ctx, dsn)
 	if err != nil {
 		return nil, err
@@ -22,7 +26,7 @@ func New(ctx context.Context, dsn string) (db.Client, error) {
 	}, nil
 }
 
-func (p *pgClient) DB() db.DB {
+func (p *pgClient) DB() Postgres {
 	return p.masterDBC
 }
 

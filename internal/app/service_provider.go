@@ -4,9 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/kenyako/auth/internal/client/db"
-	"github.com/kenyako/auth/internal/client/db/pg"
-	"github.com/kenyako/auth/internal/client/db/transaction"
+	"github.com/kenyako/auth/internal/client/postgres"
 	"github.com/kenyako/auth/internal/closer"
 	"github.com/kenyako/auth/internal/config"
 	"github.com/kenyako/auth/internal/config/env"
@@ -22,8 +20,8 @@ type serviceProvider struct {
 	pgConfig   config.PGConfig
 	grpcConfig config.GRPCConfig
 
-	dbClient       db.Client
-	txManager      db.TxManager
+	dbClient       postgres.Client
+	txManager      postgres.TxManager
 	authRepository repository.UserRepository
 
 	userService service.UserService
@@ -63,9 +61,9 @@ func (s *serviceProvider) GRPCConfig() config.GRPCConfig {
 	return s.grpcConfig
 }
 
-func (s *serviceProvider) DBCClient(ctx context.Context) db.Client {
+func (s *serviceProvider) DBCClient(ctx context.Context) postgres.Client {
 	if s.dbClient == nil {
-		cl, err := pg.New(ctx, s.PGConfig().DSN())
+		cl, err := postgres.NewClient(ctx, s.PGConfig().DSN())
 		if err != nil {
 			log.Fatalf("failed to create db client: %v", err)
 		}
@@ -82,9 +80,9 @@ func (s *serviceProvider) DBCClient(ctx context.Context) db.Client {
 	return s.dbClient
 }
 
-func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
+func (s *serviceProvider) TxManager(ctx context.Context) postgres.TxManager {
 	if s.txManager == nil {
-		s.txManager = transaction.NewTransactionManager(s.DBCClient(ctx).DB())
+		s.txManager = postgres.NewTransactionManager(s.DBCClient(ctx).DB())
 	}
 
 	return s.txManager

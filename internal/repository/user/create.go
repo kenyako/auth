@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/kenyako/auth/internal/client/db"
+	"github.com/kenyako/auth/internal/client/postgres"
 	"github.com/kenyako/auth/internal/model"
 )
 
@@ -20,7 +20,7 @@ func (r *repo) Create(ctx context.Context, data *model.UserCreate) (int64, error
 		return 0, err
 	}
 
-	q := db.Query{
+	q := postgres.Query{
 		Name:     "auth_repository.Create",
 		QueryRaw: query,
 	}

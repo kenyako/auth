@@ -1,7 +1,7 @@
 package userrepo
 
 import (
-	"github.com/kenyako/auth/internal/client/db"
+	"github.com/kenyako/auth/internal/client/postgres"
 	"github.com/kenyako/auth/internal/repository"
 )
 
@@ -21,10 +21,10 @@ const (
 )
 
 type repo struct {
-	db db.Client
+	db postgres.Client
 }
 
-func NewRepository(db db.Client) repository.UserRepository {
+func NewRepository(db postgres.Client) repository.UserRepository {
 	return &repo{
 		db: db,
 	}

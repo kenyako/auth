@@ -1,4 +1,4 @@
-package auth
+package user
 
 import (
 	"context"
@@ -11,12 +11,13 @@ func (s *serv) Get(ctx context.Context, id int64) (*model.User, error) {
 	var user *model.User
 
 	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
-		u, errTx := s.userRepository.Get(ctx, id)
+
+		var errTx error
+
+		user, errTx = s.userRepository.Get(ctx, id)
 		if errTx != nil {
 			return errTx
 		}
-
-		user = u
 
 		return nil
 	})
