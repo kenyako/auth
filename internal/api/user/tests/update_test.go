@@ -30,7 +30,7 @@ func TestImplementation_SuccessUpdate(t *testing.T) {
 		name      = gofakeit.Name()
 		email     = gofakeit.Email()
 		role_desc = desc.UserRole(desc.UserRole_value[gofakeit.RandString([]string{"USER", "ADMIN"})])
-		role_str  = gofakeit.RandString([]string{"USER", "ADMIN"})
+		role_str  = role_desc.String()
 
 		req = &desc.UpdateRequest{
 			Id:    id,
@@ -107,7 +107,7 @@ func TestImplementation_FailUpdate(t *testing.T) {
 		name      = gofakeit.Name()
 		email     = gofakeit.Email()
 		role_desc = desc.UserRole(desc.UserRole_value[gofakeit.RandString([]string{"USER", "ADMIN"})])
-		role_str  = gofakeit.RandString([]string{"USER", "ADMIN"})
+		role_str  = role_desc.String()
 
 		serviceErr = fmt.Errorf("failed to update user")
 
