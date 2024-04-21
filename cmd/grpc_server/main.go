@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 
 	"github.com/kenyako/auth/internal/app"
+	"github.com/kenyako/auth/internal/config"
 )
 
 func main() {
+	config.InitFlags()
+
+	flag.Parse()
 	ctx := context.Background()
 
 	a, err := app.NewApp(ctx)

@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"flag"
 	"log"
 	"net"
 
@@ -13,12 +12,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
-
-var configPath string
-
-func init() {
-	flag.StringVar(&configPath, "config-path", ".env", "path to config file")
-}
 
 type App struct {
 	serviceProvider *serviceProvider
@@ -63,7 +56,8 @@ func (a *App) initDeps(ctx context.Context) error {
 }
 
 func (a *App) initConfig(_ context.Context) error {
-	err := config.Load(configPath)
+
+	err := config.Load(config.ConfigPath)
 	if err != nil {
 		return err
 	}
