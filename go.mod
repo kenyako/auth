@@ -39,7 +39,7 @@ require (
 	github.com/jackc/pgtype v1.14.0 // indirect
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/joho/godotenv v1.5.1
-	github.com/kenyako/platform_common v0.0.0-20240415074911-7c1a4902d0bb
+	github.com/kenyako/platform_common v0.0.0-20240421075721-823b1e630566
 	github.com/pressly/goose/v3 v3.19.2
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
