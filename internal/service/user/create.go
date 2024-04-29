@@ -17,11 +17,6 @@ func (s *serv) Create(ctx context.Context, data *model.UserCreate) (int64, error
 			return errTx
 		}
 
-		_, errTx = s.userRepository.Get(ctx, id)
-		if errTx != nil {
-			return errTx
-		}
-
 		return nil
 	})
 

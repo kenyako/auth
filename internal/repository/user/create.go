@@ -10,6 +10,7 @@ import (
 )
 
 func (r *repo) Create(ctx context.Context, data *model.UserCreate) (int64, error) {
+
 	builderInsert := sq.Insert(table).
 		Columns(nameColumn, emailColumn, passwordColumn, passwordConfirmColumn, roleColumn).
 		Values(data.Name, data.Email, data.Password, data.PasswordConfirm, data.Role).
@@ -29,7 +30,7 @@ func (r *repo) Create(ctx context.Context, data *model.UserCreate) (int64, error
 
 	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&id)
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 
 	return id, nil
